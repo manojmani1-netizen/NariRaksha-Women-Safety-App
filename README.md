@@ -29,5 +29,5 @@ NariRaksha is a women safety application that helps users stay safe by detecting
 
 ## Project Author
 
-Vivek  
+I. Manoj Kumar, Ganesh, D. Rashmita, Ch. Navya  
 B.Tech Data Science Student
