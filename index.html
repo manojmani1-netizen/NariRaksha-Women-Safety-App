@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NariRaksha - Women Safety App</title>
+    
+    <!-- PWA Installation -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1076/1076323.png">
+
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Splash Screen (First Slide) -->
+        <div id="splashScreen" class="splash-screen">
+            <span style="font-size: 5rem; animation: pulse-animation 2s infinite;">🛡️</span>
+            <h1 style="margin-top: 15px; font-size: 2.5rem; color: var(--text-primary);">NariRaksha</h1>
+            <p style="color: var(--text-secondary); margin-top: 5px;">Your Smart Safety Companion</p>
+        </div>
+
+        <!-- Toast Notification Area -->
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Auth Screen (Login / Register) -->
+        <div id="authScreen" class="login-screen">
+            <div class="login-logo">
+                <span style="font-size: 3rem;">🛡️</span>
+                <h1>NariRaksha</h1>
+                <p>Your Smart Safety Companion</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="login-form">
+                <h2>Sign In</h2>
+                <div class="input-group">
+                    <label for="loginPhone">Phone Number</label>
+                    <input type="tel" id="loginPhone" placeholder="Enter your mobile number" required>
+                </div>
+                <div class="input-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="primary-btn">Sign In</button>
+                <p class="auth-toggle">Don't have an account? <span id="showRegisterBtn">Register here</span></p>
+            </form>
+
+            <!-- Register Form (Hidden initially) -->
+            <form id="registerForm" class="login-form hidden">
+                <h2>Create Account</h2>
+                <div class="input-group">
+                    <label for="regName">Full Name</label>
+                    <input type="text" id="regName" placeholder="Enter your full name" required>
+                </div>
+                <div class="input-group">
+                    <label for="regEmail">Email ID</label>
+                    <input type="email" id="regEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label for="regPhone">Phone Number</label>
+                    <input type="tel" id="regPhone" placeholder="Enter your mobile number" required>
+                </div>
+                <div class="input-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" placeholder="Create a password" required>
+                </div>
+                <button type="submit" class="primary-btn">Continue</button>
+                <p class="auth-toggle">Already have an account? <span id="showLoginBtn">Sign in</span></p>
+            </form>
+
+            <!-- OTP Verification Form (Hidden initially) -->
+            <form id="otpForm" class="login-form hidden">
+                <h2>Verify Phone</h2>
+                <p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 10px;">
+                    Enter the 6-digit code sent to <br><strong id="otpDisplayPhone" style="color:var(--text-primary);"></strong>
+                </p>
+                <div class="input-group">
+                    <input type="text" id="otpInput" placeholder="------" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px; font-weight: bold;" required>
+                </div>
+                <button type="submit" class="primary-btn">Verify & Register</button>
+                <p class="auth-toggle"><span id="resendOtpBtn">Resend Code</span></p>
+                <p class="auth-toggle" style="margin-top: 5px;"><span id="cancelOtpBtn">Cancel</span></p>
+            </form>
+        </div>
+
+        <!-- Main App Screen (Hidden initially) -->
+        <div id="mainApp" class="main-app hidden">
+            <!-- Header -->
+            <header class="header">
+                <div class="logo">
+                    <span class="logo-icon">🛡️</span> NariRaksha
+                </div>
+                <div class="header-actions">
+                    <button class="profile-btn" id="profileBtn" title="Profile & Contacts">
+                        <div class="profile-avatar" id="headerAvatar">U</div>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Current Status Banner -->
+            <div class="status-banner" id="statusBanner">
+                <div class="status-indicator"></div>
+                <div class="status-text">
+                    <h2 id="statusTitle">Locating you...</h2>
+                    <p id="statusDesc">Please wait while we fetch your GPS location</p>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="main-content">
+
+                <!-- Real Interactive Map Area -->
+                <div class="map-container" id="map">
+                    <!-- Leaflet will inject the map here -->
+                    <div class="map-overlay" id="mapOverlay" style="position: absolute; bottom: 10px; left: 10px; z-index: 1000; border: none; background: rgba(0,0,0,0.6);">
+                        <p class="location-text">📍 <span id="locationName">Acquiring GPS Signal...</span></p>
+                    </div>
+                </div>
+
+                <!-- Stats/Controls -->
+                <div class="quick-stats">
+                    <div class="stat-card" id="contactsStatCard">
+                        <span class="stat-label">Trusted Contacts</span>
+                        <span class="stat-value" id="contactCount">0 Active</span>
+                    </div>
+                    <div class="stat-card" id="batteryStatCard">
+                        <span class="stat-label">Battery</span>
+                        <span class="stat-value text-green" id="batteryLevelDisplay">--%</span>
+                    </div>
+                </div>
+            </main>
+
+            <!-- SOS Button Section -->
+            <div class="sos-container">
+                <p class="sos-help-text" id="sosHelpText">Hold for 3 seconds in case of emergency</p>
+                <button class="sos-button" id="sosButton">
+                    <span>SOS</span>
+                </button>
+            </div>
+        </div>
+
+    </div> <!-- End App Container -->
+
+    <!-- SOS Modal / Overlay -->
+    <div class="sos-modal hidden" id="sosModal">
+        <div class="sos-modal-content">
+            <h2>🚨 ALERT DISPATCHED 🚨</h2>
+            <p>Your live GPS location and audio are being sent to:</p>
+            <ul id="sosContactsList" class="sos-contacts-list">
+                <!-- Populated by JS -->
+            </ul>
+            <div class="success-message">
+                <span>ALERTS SENT SUCCESSFULLY</span>
+            </div>
+            <button class="cancel-btn" id="cancelSosBtn">Dismiss</button>
+        </div>
+    </div>
+
+    <!-- Account Center Modal -->
+    <div class="account-center hidden" id="accountCenter">
+        <div class="ac-header">
+            <h2>Profile & Settings</h2>
+            <button class="close-btn" id="closeAcBtn">✕</button>
+        </div>
+        <div class="ac-content">
+            <div class="profile-section">
+                <div class="profile-header">
+                    <div class="profile-avatar-large" id="profileAvatarLarge">U</div>
+                    <div class="profile-info">
+                        <h3 id="profileNameDisplay">User Name</h3>
+                        <p class="profile-detail">📞 <span id="profilePhoneDisplay"></span></p>
+                        <p class="profile-detail">📧 <span id="profileEmailDisplay"></span></p>
+                    </div>
+                </div>
+                <button id="editProfileBtn" class="secondary-btn" style="margin-top: 10px; width: 100%; padding: 8px;">Edit Profile</button>
+                
+                <!-- Edit Profile Form (Hidden) -->
+                <form id="editProfileForm" class="hidden" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                    <div class="input-group">
+                        <input type="text" id="editName" placeholder="Full Name" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" id="editEmail" placeholder="Email Address" required>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="primary-btn" style="flex: 1; padding: 10px; margin-top: 0;">Save</button>
+                        <button type="button" id="cancelEditBtn" class="secondary-btn" style="flex: 1; padding: 10px;">Cancel</button>
+                    </div>
+                </form>
+
+                <button id="logoutBtn" class="danger-btn outline" style="margin-top: 15px; width: 100%;">Log Out</button>
+                <button id="adminDbBtn" class="secondary-btn hidden" style="margin-top: 10px; width: 100%; background: var(--elevated); border: 1px dashed var(--accent); color: var(--accent);">👑 View Users Database</button>
+            </div>
+            
+            <div class="contacts-section">
+                <h3>Trusted Contacts</h3>
+                <p class="text-muted">These contacts will receive your SOS alerts.</p>
+                
+                <ul id="contactsList" class="contacts-list">
+                    <!-- Contacts will be injected here -->
+                </ul>
+
+                <form id="addContactForm" class="add-contact-form">
+                    <input type="text" id="contactName" placeholder="Contact Name" required>
+                    <input type="tel" id="contactPhone" placeholder="Phone Number" required>
+                    <button type="submit" class="secondary-btn">Add Contact</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Database Modal -->
+    <div class="sos-modal hidden" id="adminModal" style="background-color: rgba(0, 0, 0, 0.9);">
+        <div class="sos-modal-content" style="max-width: 95%; background-color: var(--surface);">
+            <h2 style="color: var(--accent); animation: none; text-align: left;">🗄️ Users Database</h2>
+            <p style="text-align: left; color: var(--text-secondary); margin-top: -10px;">Local Storage Accounts View</p>
+            
+            <div style="overflow-x: auto; max-height: 300px; margin: 15px 0; border: 1px solid var(--border); border-radius: 8px;">
+                <table id="adminTable" class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Password</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <button class="cancel-btn" id="closeAdminBtn" style="width: 100%;">Close Database</button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="app.js"></script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('ServiceWorker registration successful'))
+                    .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+    </script>
+</body>
+</html>
